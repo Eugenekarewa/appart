@@ -1,16 +1,33 @@
 import { useState } from 'react';
-import { app_backend } from 'declarations/app_backend';
+import { project_backend } from 'declarations/project_backend';
 
 function App() {
-  const [greeting, setGreeting] = useState('');
+  const [artworkTitle, setArtworkTitle] = useState('');
+  const [artworkCreator, setArtworkCreator] = useState('');
+  const [artworkPrice, setArtworkPrice] = useState('');
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event) {
+  function handleRegisterArtwork(event) {
     event.preventDefault();
-    const name = event.target.elements.name.value;
-    app_backend.greet(name).then((greeting) => {
-      setGreeting(greeting);
-    });
-    return false;
+    if (Number(artworkPrice) <= 0) {
+      setMessage('Price must be a positive number.');
+      return;
+    }
+    setLoading(true);
+    project_backend.registerArtwork(artworkTitle, artworkCreator, Number(artworkPrice))
+      .then((newArtwork) => {
+        setMessage(`Artwork Registered: ${newArtwork.title} by ${newArtwork.creator} with ID: ${newArtwork.id}`);
+        setArtworkTitle('');
+        setArtworkCreator('');
+        setArtworkPrice('');
+      })
+      .catch((error) => {
+        setMessage(`Error registering artwork: ${error.message || error}`);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
 
   return (
@@ -18,12 +35,39 @@ function App() {
       <img src="/logo2.svg" alt="DFINITY logo" />
       <br />
       <br />
-      <form action="#" onSubmit={handleSubmit}>
-        <label htmlFor="name">Enter your name: &nbsp;</label>
-        <input id="name" alt="Name" type="text" />
-        <button type="submit">Click Me!</button>
+      <form action="#" onSubmit={handleRegisterArtwork}>
+        <label htmlFor="title">Artwork Title: &nbsp;</label>
+        <input
+          id="title"
+          value={artworkTitle}
+          onChange={(e) => setArtworkTitle(e.target.value)}
+          type="text"
+          required
+        />
+        <br />
+        <label htmlFor="creator">Creator: &nbsp;</label>
+        <input
+          id="creator"
+          value={artworkCreator}
+          onChange={(e) => setArtworkCreator(e.target.value)}
+          type="text"
+          required
+        />
+        <br />
+        <label htmlFor="price">Price (in tokens): &nbsp;</label>
+        <input
+          id="price"
+          value={artworkPrice}
+          onChange={(e) => setArtworkPrice(e.target.value)}
+          type="number"
+          required
+        />
+        <br />
+        <button type="submit" disabled={loading}>
+          {loading ? 'Registering...' : 'Register Artwork'}
+        </button>
       </form>
-      <section id="greeting">{greeting}</section>
+      <section id="message" aria-live="polite">{message}</section>
     </main>
   );
 }
